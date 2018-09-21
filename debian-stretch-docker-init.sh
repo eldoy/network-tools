@@ -13,9 +13,11 @@ printf "Welcome.\n" > /etc/motd
 apt-get update && apt-get -y install vim ufw git-core zsh curl apt-transport-https ca-certificates gnupg2 software-properties-common
 
 # Install zsh config
-curl https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git /root/.oh-my-zsh
+cp /root/.oh-my-zsh/templates/zshrc.zsh-template /root/.zshrc
 sed -i -e 's/# DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/g' /root/.zshrc
 sed -i -e 's/ZSH_THEME="robbyrussell"/ZSH_THEME="bira"/g' /root/.zshrc
+chsh -s /usr/bin/zsh
 
 # Set up SSH
 sed -i -e 's/#Port 22/Port 33666/g' /etc/ssh/sshd_config
