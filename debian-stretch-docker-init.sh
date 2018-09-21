@@ -13,7 +13,7 @@ printf "Welcome.\n" > /etc/motd
 apt-get update && apt-get -y install vim ufw git-core zsh curl apt-transport-https ca-certificates gnupg2 software-properties-common
 
 # Install zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+curl https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
 
 # Set up SSH
 sed -i -e 's/#Port 22/Port 33666/g' /etc/ssh/sshd_config
