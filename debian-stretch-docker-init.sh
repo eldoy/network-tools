@@ -12,14 +12,15 @@ printf "Welcome.\n" > /etc/motd
 # Install packages
 apt-get update && apt-get -y install vim ufw git-core zsh curl apt-transport-https ca-certificates gnupg2 software-properties-common
 
-# Install zsh
+# Install zsh config
 curl https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+sed -i -e 's/# DISABLE_AUTO_UPDATE="true"/DISABLE_AUTO_UPDATE="true"/g' /root/.zshrc
+sed -i -e 's/ZSH_THEME="robbyrussell"/ZSH_THEME="bira"/g' /root/.zshrc
 
 # Set up SSH
 sed -i -e 's/#Port 22/Port 33666/g' /etc/ssh/sshd_config
 sed -i -e 's/#PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
-kill `cat /var/run/sshd.pid`
-service sshd start
+service sshd restart
 
 # Install docker
 curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | apt-key add -
