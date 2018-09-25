@@ -8,23 +8,23 @@ services:
       - data:/bitnami/mongodb/data
   mongodb:
     image: bitnami/mongodb:latest
-    restart: always 
+    restart: always
     volumes:
       - data:/bitnami/mongodb/data
     depends_on:
       - fix-mongodb-permissions
   redis:
     image: bitnami/redis:latest
-    restart: always 
+    restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     depends_on:
       - "mongodb"
   websocket:
     image: fugroup/websocket:latest
-    restart: always 
+    restart: always
     ports:
-      - "6000:5000"
+      - "6001:5000"
     environment:
       - NODE_ENV=production
     depends_on:
@@ -32,7 +32,7 @@ services:
       - "redis"
   account:
     image: fugroup/account:latest
-    restart: always 
+    restart: always
     ports:
       - "6100:4100"
     environment:
@@ -42,7 +42,7 @@ services:
       - "redis"
   upload:
     image: fugroup/upload:latest
-    restart: always 
+    restart: always
     ports:
       - "6200:4000"
     environment:
