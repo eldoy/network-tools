@@ -34,7 +34,7 @@ curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compo
 chmod +x /usr/local/bin/docker-compose
 
 # Fetch compose file
-curl https://raw.githubusercontent.com/fugroup/network-tools/master/docker-compose.yml -s -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/fugroup/network-tools/master/docker-compose.yml -s -o /root/docker-compose.yml
 
 # Start network
 docker-compose -f docker-compose.yml up -d
