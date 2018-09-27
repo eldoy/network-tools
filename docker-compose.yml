@@ -1,55 +1,53 @@
 version: "3"
 services:
-  fix-mongodb-permissions:
+  setup:
     image: bitnami/mongodb:latest
     user: root
     command: chown -R 1001:1001 /bitnami
-    volumes:
-      - data:/bitnami/mongodb/data
   mongodb:
     image: bitnami/mongodb:latest
     restart: always
     volumes:
-      - data:/bitnami/mongodb/data
+      - data:/bitnami
     depends_on:
-      - fix-mongodb-permissions
+      - setup
   redis:
     image: bitnami/redis:latest
     restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     depends_on:
-      - "mongodb"
+      - mongodb
   websocket:
     image: fugroup/websocket:latest
     restart: always
     ports:
-      - "6001:5000"
+      - 6001:5000
     environment:
       - NODE_ENV=production
     depends_on:
-      - "mongodb"
-      - "redis"
+      - mongodb
+      - redis
   account:
     image: fugroup/account:latest
     restart: always
     ports:
-      - "6100:4100"
+      - 6100:4100
     environment:
       - NODE_ENV=production
     depends_on:
-      - "mongodb"
-      - "redis"
+      - mongodb
+      - redis
   upload:
     image: fugroup/upload:latest
     restart: always
     ports:
-      - "6200:4000"
+      - 6200:4000
     environment:
       - NODE_ENV=production
     depends_on:
-      - "mongodb"
-      - "redis"
+      - mongodb
+      - redis
 volumes:
   data:
     driver: local
