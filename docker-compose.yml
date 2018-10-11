@@ -22,7 +22,7 @@ services:
     image: fugroup/websocket:latest
     restart: always
     ports:
-      - 6001:5000
+      - 5555:5555
     environment:
       - NODE_ENV=production
     depends_on:
@@ -32,7 +32,7 @@ services:
     image: fugroup/account:latest
     restart: always
     ports:
-      - 6100:4100
+      - 6666:6666
     environment:
       - NODE_ENV=production
     depends_on:
@@ -42,7 +42,7 @@ services:
     image: fugroup/upload:latest
     restart: always
     ports:
-      - 6200:4000
+      - 7777:7777
     environment:
       - NODE_ENV=production
     depends_on:
