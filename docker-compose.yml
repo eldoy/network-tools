@@ -1,5 +1,15 @@
 version: "3"
 services:
+  proxy:
+    image: fugroup/proxy:latest
+    ports:
+      - 8888:8080
+    networks:
+      - external
+    depends_on:
+      - websocket
+      - account
+      - upload
   setup:
     image: bitnami/mongodb:latest
     user: root
@@ -9,6 +19,8 @@ services:
     restart: always
     volumes:
       - data:/bitnami
+    networks:
+      - internal
     depends_on:
       - setup
   redis:
@@ -16,6 +28,8 @@ services:
     restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - internal
     depends_on:
       - mongodb
   websocket:
@@ -25,6 +39,9 @@ services:
       - 5555:5555
     environment:
       - NODE_ENV=production
+    networks:
+      - external
+      - internal
     depends_on:
       - mongodb
       - redis
@@ -35,6 +52,9 @@ services:
       - 6666:6666
     environment:
       - NODE_ENV=production
+    networks:
+      - external
+      - internal
     depends_on:
       - mongodb
       - redis
@@ -45,9 +65,15 @@ services:
       - 7777:7777
     environment:
       - NODE_ENV=production
+    networks:
+      - external
+      - internal
     depends_on:
       - mongodb
       - redis
+networks:
+  external:
+  internal:
 volumes:
   data:
     driver: local
