@@ -2,7 +2,9 @@ version: "3"
 services:
   proxy:
     image: fugroup/proxy:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     ports:
       - ${PROXY_PORT}:8080
     networks:
@@ -17,7 +19,9 @@ services:
     command: chown -R 1001:1001 /bitnami
   mongodb:
     image: bitnami/mongodb:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     volumes:
       - data:/bitnami
     networks:
@@ -26,7 +30,9 @@ services:
       - setup
   redis:
     image: bitnami/redis:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
@@ -35,7 +41,9 @@ services:
       - mongodb
   websocket:
     image: fugroup/websocket:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     ports:
       - 5555:5555
     environment:
@@ -48,7 +56,9 @@ services:
       - redis
   account:
     image: fugroup/account:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     ports:
       - 6666:6666
     environment:
@@ -61,7 +71,9 @@ services:
       - redis
   upload:
     image: fugroup/upload:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     ports:
       - 7777:7777
     environment:
