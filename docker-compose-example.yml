@@ -1,0 +1,298 @@
+version: '3.6'
+services:
+  nginx:
+    image: docker-hub.admin.bigcorp.net/nginx-nginx:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-nginx
+    depends_on:
+      - wordpress
+      - b2c
+      - backoffice
+      - batches
+      - nginx-static
+      - nginx-backoffice
+      - nginx-batches
+      - nginx-reports
+      - nginx-data
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.auth.basic: "${FRONT_HTPASSWD}"
+        traefik.frontend.passHostHeader: "true"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+  nginx-static:
+    image: docker-hub.admin.bigcorp.net/nginx-static:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-static
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker-static.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}-static.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.passHostHeader: "true"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+  b2c:
+    image: docker-hub.admin.bigcorp.net/b2c:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-b2c
+    depends_on:
+      - db-all
+      - cassandra
+      - vault
+    volumes:
+      - type: bind
+        source: /home/bigcorp/logs/${COMPOSE_PROJECT_NAME}/b2c
+        target: /var/log/tomcat
+      - type: bind
+        source: /home/bigcorp/flux/${COMPOSE_PROJECT_NAME}
+        target: /srv/tomcat/common_b2c/temp
+    environment:
+      assuremieux_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}.recette.bigcorp.com
+      assuremieux_static: https://${COMPOSE_PROJECT_NAME}-static.recette.bigcorp.com
+      cms_url: https://${COMPOSE_PROJECT_NAME}.recette.bigcorp.com/internal
+      backoffice_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}-backoffice.recette.bigcorp.com
+      graylog_host: graylog.lan.bigcorp.net
+      statsd_prefix: com.bigcorp.${COMPOSE_PROJECT_NAME}
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+      placement:
+        constraints:
+          - node.role == worker
+  wordpress:
+    image: docker-hub.admin.bigcorp.net/lf-wordpress:2018.1
+    hostname: docker-${COMPOSE_PROJECT_NAME}-wordpress
+    depends_on:
+      - db-all
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+  nginx-backoffice:
+    image: docker-hub.admin.bigcorp.net/nginx-backoffice:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-nginx-backoffice
+    depends_on:
+      - backoffice
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker-backoffice.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}-backoffice.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.auth.basic: "${BACKOFFICE_HTPASSWD}"
+        traefik.frontend.passHostHeader: "true"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+  backoffice:
+    image: docker-hub.admin.bigcorp.net/backoffice:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-backoffice
+    depends_on:
+      - db-all
+      - cassandra
+      - vault
+    volumes:
+      - type: bind
+        source: /home/bigcorp/logs/${COMPOSE_PROJECT_NAME}/backoffice
+        target: /var/log/tomcat
+      - type: bind
+        source: /home/bigcorp/data/${COMPOSE_PROJECT_NAME}
+        target: /srv/tomcat/data
+    environment:
+      backoffice_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}-backoffice.recette.bigcorp.com
+      backoffice_static_baseurl: https://${COMPOSE_PROJECT_NAME}-backoffice.recette.bigcorp.com/public
+      assuremieux_static: https://${COMPOSE_PROJECT_NAME}-static.bigcorp.com
+      graylog_host: graylog.lan.bigcorp.net
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+      placement:
+        constraints:
+          - node.role == worker
+  nginx-batches:
+    image: docker-hub.admin.bigcorp.net/nginx-batches:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-nginx-batches
+    depends_on:
+      - batches
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker-batches.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}-batches.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.auth.basic: "${BATCHES_HTPASSWD}"
+        traefik.frontend.passHostHeader: "true"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+  batches:
+    image: docker-hub.admin.bigcorp.net/batches:${COMPOSE_PROJECT_NAME}
+    hostname: docker-${COMPOSE_PROJECT_NAME}-batches
+    depends_on:
+      - db-all
+      - cassandra
+      - vault
+    environment:
+      assuremieux_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}.recette.bigcorp.com
+      assuremieux_static: https://${COMPOSE_PROJECT_NAME}-static.recette.bigcorp.com
+      backoffice_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}-backoffice.recette.bigcorp.com
+      batches_deployment_baseurl: https://${COMPOSE_PROJECT_NAME}-batches.recette.bigcorp.com
+      cms_url: https://${COMPOSE_PROJECT_NAME}.recette.bigcorp.com/internal
+      graylog_host: graylog.lan.bigcorp.net
+    volumes:
+      - type: bind
+        source: /home/bigcorp/logs/${COMPOSE_PROJECT_NAME}/batches
+        target: /var/log/tomcat
+      - type: bind
+        source: /home/bigcorp/data/${COMPOSE_PROJECT_NAME}
+        target: /srv/tomcat/data
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+      placement:
+        constraints:
+          - node.role == worker
+  vault:
+    image: docker-hub.admin.bigcorp.net/vault:${COMPOSE_PROJECT_NAME}
+    hostname: docker-vault
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+  db-all:
+    image: docker-hub.admin.bigcorp.net/db-all:${COMPOSE_PROJECT_NAME}
+    user: "999"
+    hostname: docker-${COMPOSE_PROJECT_NAME}-db
+    volumes:
+      - type: bind
+        source: /home/bigcorp/mysql/${COMPOSE_PROJECT_NAME}
+        target: /var/lib/mysql
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+          - db-benefit
+          - db-wordpress
+          - dbdev.lan.bigcorp.net
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+  nginx-reports:
+    image: docker-hub.admin.bigcorp.net/nginx-reports:${COMPOSE_PROJECT_NAME}
+    hostname: nginx-reports
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker-reports.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}-reports.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.auth.basic: "${BATCHES_HTPASSWD}"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+    volumes:
+      - type: bind
+        source: /home/bigcorp/data/${COMPOSE_PROJECT_NAME}/reports
+        target: /home/wwwbigcorp/www
+  nginx-data:
+    image: docker-hub.admin.bigcorp.net/nginx-data:${COMPOSE_PROJECT_NAME}
+    hostname: nginx-data
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - docker-data.bigcorp.com
+    deploy:
+      labels:
+        traefik.docker.network: "${COMPOSE_PROJECT_NAME}_bigcorp"
+        traefik.frontend.rule: "Host:${COMPOSE_PROJECT_NAME}-data.recette.bigcorp.com"
+        traefik.frontend.entryPoints: "http,https"
+        traefik.frontend.redirect.entryPoint: "https"
+        traefik.port: "443"
+        traefik.protocol: "https"
+        traefik.frontend.auth.basic: "${BATCHES_HTPASSWD}"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+    volumes:
+      - type: bind
+        source: /home/bigcorp/data/${COMPOSE_PROJECT_NAME}
+        target: /home/wwwbigcorp/www
+  cassandra:
+    image: docker-hub.admin.bigcorp.net/cassandra:${COMPOSE_PROJECT_NAME}
+    hostname: cassandra
+    user: "999"
+    networks:
+      ${COMPOSE_PROJECT_NAME}_bigcorp:
+        aliases:
+         - cassandra.bigcorp.com
+    deploy:
+      labels:
+        traefik.enable: "false"
+        com.bigcorp.scmfullrevision: "${SCM_FULLREVISION}"
+        com.bigcorp.scmbranch: "${SCM_BRANCH}"
+      placement:
+        constraints:
+          - node.role == worker
+    volumes:
+      - type: bind
+        source: /home/bigcorp/cassandra/${COMPOSE_PROJECT_NAME}
+        target: /var/lib/cassandra
+      - type: bind
+        source: /home/bigcorp/logs/${COMPOSE_PROJECT_NAME}/cassandra
+        target: /var/log/cassandra
+networks:
+  ${COMPOSE_PROJECT_NAME}_bigcorp:
+    external: true
+and initialy the network was just:
+
+networks:
+  bigcorp:
+    driver: overlay
