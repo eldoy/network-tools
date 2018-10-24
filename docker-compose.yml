@@ -1,12 +1,25 @@
 version: "3"
 services:
-  proxy:
-    image: fugroup/proxy:latest
+  # proxy:
+  #   image: fugroup/proxy:latest
+  #   deploy:
+  #     restart_policy:
+  #       condition: on-failure
+  #   ports:
+  #     - ${PROXY_PORT}:8080
+  #   networks:
+  #     - external
+  #   depends_on:
+  #     - websocket
+  #     - account
+  #     - upload
+  loadbalancer:
+    image: fugroup/loadbalancer:latest
     deploy:
       restart_policy:
         condition: on-failure
     ports:
-      - ${PROXY_PORT}:8080
+      - ${PROXY_PORT}:8888
     networks:
       - external
     depends_on:
